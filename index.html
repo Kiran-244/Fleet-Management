@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fleet Mileage Calculator</title>
+<meta name="description" content="Calculate sa driver's salary after extra fuel deduction.">
+<meta name="theme-color" content="#1f2933">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script>
+try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}
+</script>
+<style>
+:root{
+  --bg:#eef0f2; --card:#fff; --ink:#1f2933; --muted:#5f6b76; --line:#cfd5db;
+  --accent:#f5b800; --accent-ink:#1f2933; --ok:#1d7a46; --err:#b3261e;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#14191e; --card:#1f2933; --ink:#f1f3f5; --muted:#9aa5b1; --line:#3a4651; --ok:#5fd08e; --err:#ff8a80;}
+}
+:root[data-theme="dark"]{--bg:#14191e; --card:#1f2933; --ink:#f1f3f5; --muted:#9aa5b1; --line:#3a4651; --ok:#5fd08e; --err:#ff8a80;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Gurmukhi","Raavi",sans-serif;
+  line-height:1.5; min-height:100vh;
+  padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));
+  display:flex; justify-content:center;
+}
+main{width:100%; max-width:440px; padding-top:24px}
+header{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:20px}
+h1{font-size:1.5rem; margin:0; letter-spacing:-.01em; display:flex; align-items:center; gap:12px}
+h1::before{content:""; width:6px; height:1.6rem; background:var(--accent); border-radius:3px}
+form{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px}
+.field{margin-bottom:16px}
+label{display:block; font-weight:600; font-size:.95rem; margin-bottom:6px}
+.wrap{position:relative}
+.wrap span{position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:.9rem; pointer-events:none}
+input{
+  width:100%; font:inherit; font-size:1.1rem; padding:12px 64px 12px 14px;
+  border:1.5px solid var(--line); border-radius:10px; background:transparent; color:var(--ink);
+}
+.rs .wrap span{left:14px; right:auto}
+.rs input{padding:12px 14px 12px 32px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.row{display:flex; gap:10px; margin-top:8px}
+button{
+  font:inherit; font-weight:700; font-size:1.05rem; border-radius:10px; padding:14px; cursor:pointer;
+  border:1.5px solid transparent; min-height:50px;
+}
+#calc{flex:2; background:var(--accent); color:var(--accent-ink)}
+#theme{flex:none; min-height:44px; min-width:44px; padding:8px 12px; font-size:1.2rem; background:var(--card); color:var(--ink); border-color:var(--line)}
+#clear{flex:1; background:transparent; color:var(--ink); border-color:var(--line)}
+button:active{transform:translateY(1px)}
+#error{color:var(--err); font-weight:600; margin:12px 0 0; min-height:0}
+#result{margin-top:20px; background:var(--card); border:1px solid var(--line); border-left:6px solid var(--accent); border-radius:14px; padding:20px}
+#result[hidden]{display:none}
+.big-label{color:var(--muted); font-size:.95rem; margin:0}
+.big{font-size:2.6rem; font-weight:800; line-height:1.15; margin:2px 0 10px; letter-spacing:-.02em}
+.big.ok{color:var(--ok)}
+#explain-pa,#explain-en{margin:0 0 10px; font-size:1.05rem; line-height:1.6}
+#explain-pa{font-weight:600}
+#explain-en{color:var(--muted); padding-top:10px; border-top:1px solid var(--line); margin:0}
+#install{width:100%; margin-top:16px; background:var(--card); color:var(--ink); border-color:var(--line)}
+#ios-hint{margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px}
+#ios-hint p{margin:0 0 6px}
+#ios-hint p:last-child{margin:0; color:var(--muted)}
+.note{margin:20px 4px 0; color:var(--muted); font-size:.8rem}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Fleet Mileage Calculator</h1>
+    <button type="button" id="theme" aria-label="Switch between light and dark mode"></button>
+  </header>
+
+  <form id="form" novalidate>
+    <div class="field">
+      <label for="distance">Distance travelled</label>
+      <div class="wrap"><input id="distance" inputmode="decimal" autocomplete="off" placeholder="600"><span>km</span></div>
+    </div>
+    <div class="field">
+      <label for="actual">Actual mileage</label>
+      <div class="wrap"><input id="actual" inputmode="decimal" autocomplete="off" placeholder="6"><span>km/litre</span></div>
+    </div>
+    <div class="field">
+      <label for="expected">Expected mileage</label>
+      <div class="wrap"><input id="expected" inputmode="decimal" autocomplete="off" placeholder="8"><span>km/litre</span></div>
+    </div>
+    <div class="field rs">
+      <label for="fuel">Fuel price per litre</label>
+      <div class="wrap"><span>₹</span><input id="fuel" inputmode="decimal" autocomplete="off" placeholder="90"></div>
+    </div>
+    <div class="field rs">
+      <label for="salary">Monthly salary</label>
+      <div class="wrap"><span>₹</span><input id="salary" inputmode="decimal" autocomplete="off" placeholder="8500"></div>
+    </div>
+    <div class="row">
+      <button type="submit" id="calc">Calculate</button>
+      <button type="button" id="clear">Clear</button>
+    </div>
+    <p id="error" role="alert"></p>
+  </form>
+
+  <section id="result" hidden aria-live="polite">
+    <p class="big-label">ਕਟੌਤੀ ਤੋਂ ਬਾਅਦ ਤਨਖਾਹ · Salary after deduction</p>
+    <p class="big" id="final"></p>
+    <p id="explain-pa" lang="pa"></p>
+    <p id="explain-en"></p>
+  </section>
+
+  <button type="button" id="install" hidden>ਐਪ ਇੰਸਟਾਲ ਕਰੋ · Install app</button>
+  <div id="ios-hint" hidden>
+    <p lang="pa">Safari ਵਿੱਚ ਹੇਠਾਂ Share ਬਟਨ ਦਬਾਓ, ਫਿਰ “Add to Home Screen” ਚੁਣੋ।</p>
+    <p>In Safari, tap the Share button, then choose “Add to Home Screen”.</p>
+  </div>
+
+  <p class="note">This is an estimate. Check payroll deductions against employment laws before applying them.</p>
+</main>
+
+<script>
+(function(){
+  var ids=["distance","actual","expected","fuel","salary"];
+  var el={}; ids.forEach(function(i){el[i]=document.getElementById(i)});
+  var form=document.getElementById("form"), err=document.getElementById("error"),
+      box=document.getElementById("result"), fin=document.getElementById("final"),
+      pa=document.getElementById("explain-pa"), en=document.getElementById("explain-en");
+  var nf=new Intl.NumberFormat("en-IN",{maximumFractionDigits:2});
+  function rs(n){return "₹"+nf.format(Math.round(n*100)/100)}
+  function num(v){v=String(v).replace(/,/g,"").trim(); return v===""?NaN:Number(v)}
+
+  form.addEventListener("submit",function(e){
+    e.preventDefault(); err.textContent="";
+    var d=num(el.distance.value), a=num(el.actual.value), x=num(el.expected.value),
+        p=num(el.fuel.value), s=num(el.salary.value);
+    var bad=[d,a,x,p,s].some(function(n){return !isFinite(n)||n<0});
+    if(bad){return fail("Please fill in all five boxes with numbers.")}
+    if(a<=0||x<=0){return fail("Mileage must be more than 0.")}
+
+    var expFuel=d/x, actFuel=d/a;
+    var extra=Math.max(0,actFuel-expFuel);
+    var cut=extra*p;
+    var finalSal=Math.max(0,s-cut);
+
+    box.hidden=false;
+    fin.textContent=rs(finalSal);
+    fin.classList.toggle("ok",cut===0);
+    var L=nf.format(Math.round(extra*100)/100);
+    if(cut===0){
+      pa.textContent="ਗੱਡੀ ਨੇ ਤੈਅ ਮਾਈਲੇਜ ਜਾਂ ਉਸ ਤੋਂ ਵੱਧ ਦਿੱਤੀ। ਇਸ ਲਈ ਕੋਈ ਕਟੌਤੀ ਨਹੀਂ। ਤਨਖਾਹ "+rs(s)+" ਹੀ ਰਹੇਗੀ।";
+      en.textContent="The vehicle gave the expected mileage or more. So there is no deduction. Salary stays "+rs(s)+".";
+    }else if(cut>=s){
+      pa.textContent="ਅਸਲ ਤਨਖਾਹ "+rs(s)+" ਹੈ। ਗੱਡੀ ਨੇ ਘੱਟ ਮਾਈਲੇਜ ਦਿੱਤੀ, ਇਸ ਲਈ "+L+" ਲੀਟਰ ਤੇਲ ਵੱਧ ਲੱਗਿਆ। ਇਸ ਤੇਲ ਦੀ ਕੀਮਤ "+rs(cut)+" ਹੈ, ਜੋ ਤਨਖਾਹ ਤੋਂ ਵੱਧ ਹੈ। ਇਸ ਲਈ ਬਾਕੀ ਤਨਖਾਹ ₹0 ਹੈ।";
+      en.textContent="Original salary: "+rs(s)+". The vehicle gave less mileage, so it used "+L+" litres of extra fuel. This fuel costs "+rs(cut)+", which is more than the salary. So the salary left is ₹0.";
+    }else{
+      pa.textContent="ਅਸਲ ਤਨਖਾਹ "+rs(s)+" ਹੈ। ਗੱਡੀ ਨੇ ਘੱਟ ਮਾਈਲੇਜ ਦਿੱਤੀ, ਇਸ ਲਈ "+L+" ਲੀਟਰ ਤੇਲ ਵੱਧ ਲੱਗਿਆ। ਇਸ ਤੇਲ ਦੀ ਕੀਮਤ "+rs(cut)+" ਹੈ। ਇਹ ਤਨਖਾਹ ਵਿੱਚੋਂ ਕੱਟੀ ਗਈ। ਬਾਕੀ ਤਨਖਾਹ "+rs(finalSal)+" ਹੈ।";
+      en.textContent="Original salary: "+rs(s)+". The vehicle gave less mileage, so it used "+L+" litres of extra fuel. This fuel costs "+rs(cut)+". This is cut from the salary. Salary left: "+rs(finalSal)+".";
+    }
+    box.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"});
+  });
+
+  function fail(m){err.textContent=m; box.hidden=true}
+
+  document.getElementById("clear").addEventListener("click",function(){
+    form.reset(); err.textContent=""; box.hidden=true; el.distance.focus();
+  });
+
+  var tb=document.getElementById("theme"), root=document.documentElement;
+  function isDark(){
+    var t=root.getAttribute("data-theme");
+    return t?t==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  }
+  function paint(){tb.textContent=isDark()?"☀":"☾"}
+  tb.addEventListener("click",function(){
+    var next=isDark()?"light":"dark";
+    root.setAttribute("data-theme",next);
+    try{localStorage.setItem("theme",next)}catch(e){}
+    paint();
+  });
+  paint();
+
+  var ib=document.getElementById("install"), hint=document.getElementById("ios-hint"), deferred=null;
+  var standalone=matchMedia("(display-mode:standalone)").matches||navigator.standalone===true;
+  if(!standalone){
+    window.addEventListener("beforeinstallprompt",function(e){e.preventDefault(); deferred=e; ib.hidden=false});
+    if(/iphone|ipad|ipod/i.test(navigator.userAgent)) ib.hidden=false;
+  }
+  ib.addEventListener("click",function(){
+    if(deferred){
+      deferred.prompt();
+      deferred.userChoice.then(function(){deferred=null; ib.hidden=true});
+    }else{hint.hidden=!hint.hidden}
+  });
+  window.addEventListener("appinstalled",function(){ib.hidden=true; hint.hidden=true});
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
+  }
+})();
+</script>
+</body>
+</html>
